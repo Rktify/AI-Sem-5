@@ -35,73 +35,77 @@ class TicTacToe():
         return state
 
     def terminal_node(self, state):
-        result = 0
-        is_game_over = False
+
+        isWinner = False
+
+        # Check rows
+        for i in range(3):
+            sum_p1_row, sum_p2_row = 0, 0
+            for j in range(3):
+                if state[i][j] == 1:
+                    sum_p1_row += 1
+                elif state[i][j] == -1:
+                    sum_p2_row += -1
+            if sum_p1_row == 3:
+                isWinner = True
+                return {"gameover": True, "result": 10}
+            elif sum_p2_row == -3:
+                isWinner = True
+                return {"gameover": True, "result": -10}
+
+        # Check columns
+        for i in range(3):
+            sum_p1_col, sum_p2_col = 0, 0
+            for j in range(3):
+                if state[j][i] == 1:
+                    sum_p1_col += 1
+                elif state[j][i] == -1:
+                    sum_p2_col += -1
+            if sum_p1_col == 3:
+                isWinner = True
+                return {"gameover": True, "result": 10}
+            elif sum_p2_col == -3:
+                isWinner = True
+                return {"gameover": True, "result": -10}
+
+        # Check top-left to bottom-right diagonal
+        sum_p1_diag, sum_p2_diag = 0, 0
+        for i in range(3):
+            if state[i][i] == 1:
+                sum_p1_diag += 1
+            elif state[i][i] == -1:
+                sum_p2_diag += -1
+        if sum_p1_diag == 3:
+            isWinner = True
+            return {"gameover": True, "result": 10}
+        elif sum_p2_diag == -3:
+            isWinner = True
+            return {"gameover": True, "result": -10}
+
+        # Check top-right to bottom-left diagonal
+        sum_p1_rev_diag, sum_p2_rev_diag = 0, 0
+        for i in range(3):
+            if state[i][2 - i] == 1:
+                sum_p1_rev_diag += 1
+            elif state[i][2 - i] == -1:
+                sum_p2_rev_diag += -1
+        if sum_p1_rev_diag == 3:
+            isWinner = True
+            return {"gameover": True, "result": 10}
+        elif sum_p2_rev_diag == -3:
+            isWinner = True
+            return {"gameover": True, "result": -10}
 
         emptyCells = False
         for i in range(3):
             emptyCells = any(state[i][j] == 0 for j in range(3))
 
-        isWinner = False
-
-        for i in range(3):
-            sum_p1_row, sum_p2_row, sum_p1_col, sum_p2_col = 0, 0, 0, 0
-            for j in range(3):
-                #Check row
-                if state[i][j] == 1:
-                    sum_p1_row += 1
-                elif state[i][j] == -1:
-                    sum_p2_row -= 1
-                #Check col
-                if state[j][i] == 1:
-                    sum_p1_col += 1
-                elif state[j][i] == -1:
-                    sum_p2_col -= 1
-
-            if sum_p1_row == 3:
-                isWinner = True
-                result = 10
-            elif sum_p2_row == -3:
-                isWinner = True
-                result = -10
-
-            if sum_p1_col == 3:
-                isWinner = True
-                result = 10
-            elif sum_p2_col == -3:
-                isWinner = True
-                result = -10
-
-        sum_p1_diag, sum_p2_diag, sum_p1_rev_diag, sum_p2_rev_diag = 0, 0, 0, 0
-        for i in range(3):
-            #Checks the top left to bot right diagonal
-            if state[i][i] == 1:
-                sum_p1_diag += 1
-            if state[i][i] == -1:
-                sum_p2_diag -= 1
-            #Checks the top right to bot left diagonal
-            if state[i][2 - i] == 1:
-                sum_p1_rev_diag += 1
-            if state[i][2 - i] == -1:
-                sum_p2_rev_diag -= 1
-
-        if sum_p1_diag == 3:
-            isWinner = True
-            result = 10
-        elif sum_p2_diag == -3:
-            isWinner = True
-            result = -10
-
-        if sum_p1_rev_diag == 3:
-            isWinner = True
-            result = 10
-        elif sum_p2_rev_diag == -3:
-            isWinner = True
-            result = -10
-
-
-        is_game_over = isWinner or not emptyCells
-        return {"gameover": is_game_over, "result": result}
+        if isWinner:
+            return {"gameover": True, "result": 10}
+        elif not emptyCells:
+            return {"gameover": True, "result": 0}
+        else:
+            return {"gameover": False, "result": 0}
 
 
     def expand_state(self, state):
@@ -114,45 +118,41 @@ class TicTacToe():
         return children
 
 
+    def computer_move(self):
+        _, best_move = self.minimax(self.state, -1, 9, True)
+        if best_move is not None:
+            row, col = best_move
+            self.make_move(row, col, -1)
+        return best_move
+
     def minimax(self, state, player, depth, isMaxPlayer):
-        if self.terminal_node(state)["gameover"]:
-            return self.terminal_node(state)["result"]
-        if player == 1:
+        if self.terminal_node(state)["gameover"] or depth == 0:
+            return self.terminal_node(state)["result"], None
+
+        best_move = None
+        if isMaxPlayer:
             best_score = -math.inf
             for move in self.expand_state(state):
                 row, col = move
                 child = copy.deepcopy(state)
                 child[row][col] = 1
-                v = self.minimax(child, -1, depth  - 1, not isMaxPlayer)
-                best_score = max(best_score, v)
-            return best_score
+                score, _ = self.minimax(child, -1, depth - 1, not isMaxPlayer)
+                if score > best_score:
+                    best_score = score
+                    best_move = move
+            return best_score, best_move
         else:
             best_score = math.inf
             for move in self.expand_state(state):
                 row, col = move
                 child = copy.deepcopy(state)
                 child[row][col] = -1
-                v = self.minimax(child, 1, depth  - 1, not isMaxPlayer)
-                best_score = max(best_score, v)
-            return best_score
+                score, _ = self.minimax(child, 1, depth - 1, not isMaxPlayer)
+                if score < best_score:
+                    best_score = score
+                    best_move = move
+            return best_score, best_move
 
-    def computer_move(self):
-        best_score = -math.inf
-        best_move = None
-        depth = 9
-        isMaxPlayer = True
-
-        for move in self.expand_state(self.state):
-            row, col = move
-            child = copy.deepcopy(self.state)
-            child[row][col] = 1
-            score = self.minimax(child, -1, depth -1, not isMaxPlayer)
-
-            if score > best_score:
-                best_score = score
-                best_move = move
-
-        return best_move
 
 def user_move():
     while True:
@@ -181,12 +181,12 @@ def main():
             game.make_move(row, col, -1)
             player_turn = True
 
-        if game.terminal_node(game.state)["gameover"]:
+        result = game.terminal_node(game.state)
+        if result["gameover"]:
             game.display_board()
-            result = game.terminal_node(game.state)["result"]
-            if result == 10:
+            if result["result"] == 10:
                 print("You win!")
-            elif result == -10:
+            elif result["result"] == -10:
                 print("Computer wins!")
             else:
                 print("It's a tie!")
