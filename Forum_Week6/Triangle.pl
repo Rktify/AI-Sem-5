@@ -13,7 +13,7 @@ main :-
     read(Angle3),
     
     (is_triangle(Angle1, Angle2, Angle3) ->
-        write('These angles form a valid triangle.'),
+        writeln('These angles form a valid triangle.'),
         (is_right_triangle(Angle1, Angle2, Angle3) ->
             writeln(' It is also a right triangle.');
             writeln(' It is not a right triangle.')
